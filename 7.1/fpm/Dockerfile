@@ -38,7 +38,9 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
         php7-zip \
 		&& cp /usr/share/zoneinfo/Europe/London /etc/localtime \
     && echo "Europe/London" > /etc/timezone \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/cache/apk/* \
+    && addgroup -g 82 -S www-data \
+  	&& adduser -u 82 -D -S -G www-data www-data
 
 WORKDIR /app
 
