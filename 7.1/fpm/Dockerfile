@@ -49,10 +49,19 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
   		echo 'daemonize = no'; \
   		echo; \
       echo '[www]'; \
-      echo 'user = www-data'; \
-      echo 'group = www-data'; \
+      echo 'user = nginx'; \
+      echo 'group = nginx'; \
       echo ''; \
       echo 'listen = /var/run/php7-fpm.sock'; \
+      echo 'listen.mode = 0666'; \
+      echo ''; \
+      echo 'pm = dynamic'; \
+      echo 'pm.max_children = 5'; \
+      echo 'pm.start_servers = 2'; \
+      echo 'pm.min_spare_servers = 1'; \
+      echo 'pm.max_spare_servers = 3'; \
+      echo 'pm.max_requests = 500'; \
+      echo ''; \
       echo 'chdir = /app'; \
       echo ''; \
       echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
@@ -60,9 +69,10 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
       echo ''; \
       echo 'clear_env = no'; \
     } | tee /etc/php7/php-fpm.d/www.conf \
-    && sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php7/php.ini
-
-RUN mkdir /etc/service/nginx \
+    && sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php7/php.ini \
+    && sed -i 's/variables_order = "GPCS"/variables_order = "EGPCS"/g' /etc/php7/php.ini \
+    && sed -i 's/;daemonize = yes/daemonize = no/g' /etc/php7/php-fpm.conf \
+    && mkdir /etc/service/nginx \
     && { \
       echo '#!/bin/sh'; \
       echo 'exec 2>&1'; \
@@ -77,7 +87,7 @@ RUN mkdir /etc/service/nginx \
       echo 'exec 2>&1'; \
       echo 'source /env'; \
       echo 'mkdir -p /run/php'; \
-      echo 'exec /usr/sbin/php-fpm --nodaemonize'; \
+      echo 'exec /usr/sbin/php-fpm7 --nodaemonize'; \
     } | tee /etc/service/php7-fpm/run \
     && chmod +x /etc/service/php7-fpm/run
 
