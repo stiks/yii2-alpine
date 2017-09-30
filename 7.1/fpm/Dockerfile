@@ -2,9 +2,13 @@ FROM alpine:edge
 
 MAINTAINER Kirill Garbar <kirill@iterium.co.uk>
 
-RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories && \
-    apk --update add \
+ENV TIMEZONE Europe/London
+
+RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
+    && apk --update upgrade \
+    && apk add \
 				tzdata \
+        runit \
         php7 \
         php7-ctype \
         php7-mbstring \
@@ -36,11 +40,46 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
         php7-posix \
         php7-session \
         php7-zip \
-		&& cp /usr/share/zoneinfo/Europe/London /etc/localtime \
-    && echo "Europe/London" > /etc/timezone \
+        nginx \
+		&& cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
+    && echo "${TIMEZONE}" > /etc/timezone \
     && rm -rf /var/cache/apk/* \
-    && addgroup -g 82 -S www-data \
-  	&& adduser -u 82 -D -S -G www-data www-data
+    && { \
+      echo '[global]'; \
+  		echo 'daemonize = no'; \
+  		echo; \
+      echo '[www]'; \
+      echo 'user = www-data'; \
+      echo 'group = www-data'; \
+      echo ''; \
+      echo 'listen = /var/run/php7-fpm.sock'; \
+      echo 'chdir = /app'; \
+      echo ''; \
+      echo '; Ensure worker stdout and stderr are sent to the main error log.'; \
+      echo 'catch_workers_output = yes'; \
+      echo ''; \
+      echo 'clear_env = no'; \
+    } | tee /etc/php7/php-fpm.d/www.conf \
+    && sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php7/php.ini
+
+RUN mkdir /etc/service/nginx \
+    && { \
+      echo '#!/bin/sh'; \
+      echo 'exec 2>&1'; \
+      echo 'source /env'; \
+      echo 'mkdir -p /run/nginx'; \
+      echo 'exec /usr/sbin/nginx -c /etc/nginx/nginx.conf  -g "daemon off;"'; \
+    } | tee /etc/service/nginx/run \
+    && chmod +x /etc/service/nginx/run \
+    && mkdir /etc/service/php7-fpm \
+    && { \
+      echo '#!/bin/sh'; \
+      echo 'exec 2>&1'; \
+      echo 'source /env'; \
+      echo 'mkdir -p /run/php'; \
+      echo 'exec /usr/sbin/php-fpm --nodaemonize'; \
+    } | tee /etc/service/php7-fpm/run \
+    && chmod +x /etc/service/php7-fpm/run
 
 WORKDIR /app
 
@@ -53,9 +92,10 @@ ONBUILD RUN php -r "readfile('https://getcomposer.org/installer');" | php -- --i
     && composer global require hirak/prestissimo \
     && composer global require "fxp/composer-asset-plugin:^1.2.0"
 
-#COPY php.ini /etc/php7/conf.d/50-setting.ini
-COPY php-fpm.conf /etc/php7/php-fpm.d/www.conf
+ADD nginx/default.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 9000
+EXPOSE 80
 
-CMD ["php-fpm"]
+#CMD ["/sbin/my_init"]
+CMD ["/sbin/runit-init"]
+#CMD ["/sbin/runit-wrapper"]
