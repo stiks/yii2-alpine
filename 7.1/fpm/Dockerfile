@@ -72,6 +72,7 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
     && sed -i -e "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g" /etc/php7/php.ini \
     && sed -i 's/variables_order = "GPCS"/variables_order = "EGPCS"/g' /etc/php7/php.ini \
     && sed -i 's/;daemonize = yes/daemonize = no/g' /etc/php7/php-fpm.conf \
+    && sed -i 's/;error_log = log\/php7\/error.log/error_log = \/proc\/self\/fd\/2/g' /etc/php7/php-fpm.conf \
     && mkdir /etc/service/nginx \
     && { \
       echo '#!/bin/sh'; \
@@ -89,7 +90,10 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
       echo 'mkdir -p /run/php'; \
       echo 'exec /usr/sbin/php-fpm7 --nodaemonize'; \
     } | tee /etc/service/php7-fpm/run \
-    && chmod +x /etc/service/php7-fpm/run
+    && chmod +x /etc/service/php7-fpm/run \
+    # forward request and error logs to docker log collector
+    && ln -sf /dev/stdout /var/log/nginx/access.log \
+    && ln -sf /dev/stderr /var/log/nginx/error.log
 
 WORKDIR /app
 
