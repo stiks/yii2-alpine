@@ -93,7 +93,11 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
     && chmod +x /etc/service/php7-fpm/run \
     # forward request and error logs to docker log collector
     && ln -sf /dev/stdout /var/log/nginx/access.log \
-    && ln -sf /dev/stderr /var/log/nginx/error.log
+    && ln -sf /dev/stderr /var/log/nginx/error.log \
+    && echo "" > /env
+
+ADD nginx/default.conf /etc/nginx/conf.d/default.conf
+ADD runit/runit-wrapper /sbin/
 
 WORKDIR /app
 
@@ -106,11 +110,6 @@ ONBUILD RUN php -r "readfile('https://getcomposer.org/installer');" | php -- --i
     && composer global require hirak/prestissimo \
     && composer global require "fxp/composer-asset-plugin:^1.2.0"
 
-ADD nginx/default.conf /etc/nginx/conf.d/default.conf
-ADD runit/runit-wrapper /sbin/
-
 EXPOSE 80
 
-#CMD ["/sbin/my_init"]
-#CMD ["/sbin/runit-init"]
 CMD ["/sbin/runit-wrapper"]
