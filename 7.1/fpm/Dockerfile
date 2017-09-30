@@ -93,9 +93,10 @@ ONBUILD RUN php -r "readfile('https://getcomposer.org/installer');" | php -- --i
     && composer global require "fxp/composer-asset-plugin:^1.2.0"
 
 ADD nginx/default.conf /etc/nginx/conf.d/default.conf
+ADD runit/runit-wrapper /sbin/
 
 EXPOSE 80
 
 #CMD ["/sbin/my_init"]
-CMD ["/sbin/runit-init"]
-#CMD ["/sbin/runit-wrapper"]
+#CMD ["/sbin/runit-init"]
+CMD ["/sbin/runit-wrapper"]
