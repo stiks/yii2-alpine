@@ -7,7 +7,7 @@ ENV TIMEZONE Europe/London
 RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
     && apk --update upgrade \
     && apk add \
-				tzdata \
+        tzdata \
         runit \
         php7 \
         php7-ctype \
@@ -19,9 +19,10 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
         php7-fpm \
         php7-cli \
         php7-pdo \
+        php7-pdo_mysql \
         php7-mcrypt \
         php7-mysqli \
-				php7-opcache \
+        php7-opcache \
 
         # required by composer
         php7-phar \
@@ -41,13 +42,13 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
         php7-session \
         php7-zip \
         nginx \
-		&& cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
+    && cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
     && echo "${TIMEZONE}" > /etc/timezone \
     && rm -rf /var/cache/apk/* \
     && { \
       echo '[global]'; \
-  		echo 'daemonize = no'; \
-  		echo; \
+      echo 'daemonize = no'; \
+      echo; \
       echo '[www]'; \
       echo 'user = nginx'; \
       echo 'group = nginx'; \
@@ -93,8 +94,7 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
     && chmod +x /etc/service/php7-fpm/run \
     # forward request and error logs to docker log collector
     && ln -sf /dev/stdout /var/log/nginx/access.log \
-    && ln -sf /dev/stderr /var/log/nginx/error.log \
-    && echo "" > /env
+    && ln -sf /dev/stderr /var/log/nginx/error.log
 
 ADD nginx/default.conf /etc/nginx/conf.d/default.conf
 ADD runit/runit-wrapper /sbin/
