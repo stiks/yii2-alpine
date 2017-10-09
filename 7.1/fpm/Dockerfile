@@ -107,8 +107,7 @@ ONBUILD ARG GITHUB_OAUTH_TOKEN
 # Install composer global bin
 ONBUILD RUN php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/local/bin --filename=composer \
     && composer config -g github-oauth.github.com $GITHUB_OAUTH_TOKEN \
-    && composer global require hirak/prestissimo \
-    && composer global require "fxp/composer-asset-plugin:^1.2.0"
+    && composer global require hirak/prestissimo
 
 EXPOSE 80
 
